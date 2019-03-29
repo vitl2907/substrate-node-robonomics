@@ -1,0 +1,16 @@
+[package]
+name = "robonomics-parachain-wasm"
+version = "0.0.0"
+authors = [ "Airalab <research@aira.life>" ]
+
+[dependencies]
+robonomics-parachain = { path = ".." }
+polkadot-parachain = { git = "https://github.com/akru/polkadot", branch = "v0.3.20", default-features = false }
+wee_alloc = { version = "0.4.1" }
+pwasm-libc = { version = "0.2" }
+tiny-keccak = "1.4"
+
+[lib]
+crate-type = ["cdylib"]
+
+[workspace]

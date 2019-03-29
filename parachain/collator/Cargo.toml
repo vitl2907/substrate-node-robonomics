@@ -1,0 +1,15 @@
+[package]
+name = "robonomics-collator"
+version = "0.0.0"
+authors = [ "Airalab <research@aira.life>" ]
+
+[dependencies]
+robonomics-parachain = { path = ".." }
+polkadot-collator = { git = "https://github.com/akru/polkadot", branch = "v0.3.20" }
+polkadot-parachain = { git = "https://github.com/akru/polkadot", branch = "v0.3.20" }
+polkadot-primitives = { git = "https://github.com/akru/polkadot", branch = "v0.3.20" }
+substrate-primitives = { git = "https://github.com/paritytech/substrate" }
+parking_lot = "0.4"
+ctrlc = { git = "https://github.com/paritytech/rust-ctrlc.git" }
+futures = "0.1"
+exit-future = "0.1.2"

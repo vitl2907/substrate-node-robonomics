@@ -45,8 +45,8 @@ ros = [ 'ros-integration' ]
 vergen = "2"
 
 [workspace]
-members = [ "runtime", "ros-integration" ]
-exclude = [ "runtime/wasm" ]
+members = [ "runtime", "ros-integration", "parachain/collator" ]
+exclude = [ "runtime/wasm", "parachain/wasm" ]
 
 [profile.release]
 # Substrate runtime requires unwinding.
