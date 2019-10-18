@@ -27,8 +27,12 @@ pub mod types;
 pub mod impls;
 
 use rstd::prelude::*;
-use support::{construct_runtime, parameter_types};
 use primitives::OpaqueMetadata;
+use support::{
+    construct_runtime,
+    parameter_types,
+    traits::Randomness
+};
 use sr_primitives::{
     ApplyResult, generic, create_runtime_str, key_types
 };
@@ -37,19 +41,22 @@ use sr_primitives::curve::PiecewiseLinear;
 use sr_primitives::transaction_validity::TransactionValidity;
 use sr_primitives::traits::{
     self, BlakeTwo256, Block as BlockT,
-    DigestFor, NumberFor, StaticLookup, SaturatedConversion,
+    NumberFor, StaticLookup, SaturatedConversion,
 };
-use babe::{AuthorityId as BabeId};
+use babe_primitives::{AuthorityId as BabeId, AuthoritySignature as BabeSignature};
 use authority_discovery_primitives::{AuthorityId as EncodedAuthorityId, Signature as EncodedSignature};
-use im_online::sr25519::{AuthorityId as ImOnlineId, AuthoritySignature as ImOnlineSignature};
+use im_online::sr25519::{AuthorityId as ImOnlineId};
 use system::offchain::TransactionSubmitter;
-use grandpa::fg_primitives::{self, ScheduledChange};
-use grandpa::{AuthorityWeight as GrandpaWeight, AuthorityId as GrandpaId};
+use grandpa::{
+    fg_primitives,
+    AuthorityWeight as GrandpaWeight,
+    AuthorityId as GrandpaId,
+};
 use client::{
     block_builder::api::{CheckInherentsResult, InherentData, self as block_builder_api},
     runtime_api, impl_runtime_apis
 };
-use crate::impls::{CurrencyToVoteHandler, WeightMultiplierUpdateHandler, WeightToFee};
+use crate::impls::{CurrencyToVoteHandler, FeeMultiplierUpdateHandler, WeightToFee};
 use crate::constants::{time::*, currency::*};
 use crate::types::{
     Balance, BlockNumber, Index, Hash, AccountId, AccountIndex, Moment, Signature,
@@ -117,8 +124,6 @@ impl system::Trait for Runtime {
     type Hashing = BlakeTwo256;
     /// The header type.
     type Header = generic::Header<BlockNumber, BlakeTwo256>;
-    /// TODO: doc
-    type WeightMultiplierUpdate = WeightMultiplierUpdateHandler;
     /// The ubiquitous event type.
     type Event = Event;
     /// The ubiquitous origin type.
@@ -131,6 +136,11 @@ impl system::Trait for Runtime {
     type MaximumBlockLength = MaximumBlockLength;
     /// TODO: doc
     type AvailableBlockRatio = AvailableBlockRatio;
+}
+
+impl utility::Trait for Runtime {
+    type Event = Event;
+    type Call = Call;
 }
 
 parameter_types! {
@@ -156,6 +166,7 @@ parameter_types! {
 impl babe::Trait for Runtime {
     type EpochDuration = EpochDuration;
     type ExpectedBlockTime = ExpectedBlockTime;
+    type EpochChangeTrigger = babe::ExternalTrigger;
 }
 
 impl authorship::Trait for Runtime {
@@ -181,8 +192,6 @@ parameter_types! {
     pub const ExistentialDeposit: Balance = 1 * COASE;
     pub const TransferFee: Balance = 1 * GLUSHKOV;
     pub const CreationFee: Balance = 1 * GLUSHKOV;
-    pub const TransactionBaseFee: Balance = 1 * GLUSHKOV;
-    pub const TransactionByteFee: Balance = 50 * COASE;
 }
 
 impl balances::Trait for Runtime {
@@ -194,15 +203,25 @@ impl balances::Trait for Runtime {
     type OnNewAccount = Indices;
     /// The uniquitous event type.
     type Event = Event;
-    type TransactionPayment = ();
     type DustRemoval = ();
     type TransferPayment = ();
     type ExistentialDeposit = ExistentialDeposit;
     type TransferFee = TransferFee;
     type CreationFee = CreationFee;
+}
+
+parameter_types! {
+    pub const TransactionBaseFee: Balance = 1 * GLUSHKOV;
+    pub const TransactionByteFee: Balance = 50 * COASE;
+}
+
+impl transaction_payment::Trait for Runtime {
+    type Currency = Balances;
+    type OnTransactionPayment = ();
     type TransactionBaseFee = TransactionBaseFee;
     type TransactionByteFee = TransactionByteFee;
     type WeightToFee = WeightToFee;
+    type FeeMultiplierUpdate = FeeMultiplierUpdateHandler;
 }
 
 type SessionHandlers = (Grandpa, Babe, ImOnline, AuthorityDiscovery);
@@ -310,7 +329,9 @@ impl offences::Trait for Runtime {
     type OnOffenceHandler = Staking;
 }
 
-impl authority_discovery::Trait for Runtime {}
+impl authority_discovery::Trait for Runtime {
+    type AuthorityId = BabeId;
+}
 
 impl robonomics::Trait for Runtime {
     /// Native token as processing currency.
@@ -328,10 +349,15 @@ construct_runtime!(
         // Basic stuff.
         System: system::{Module, Call, Storage, Config, Event},
         Timestamp: timestamp::{Module, Call, Storage, Inherent},
+        Utility: utility::{Module, Call, Event},
 
         // Native currency and accounts.
-        Balances: balances,
         Indices: indices,
+        Balances: balances::{default, Error},
+        TransactionPayment: transaction_payment::{Module, Storage},
+
+        // Randomness.
+        RandomnessCollectiveFlip: randomness_collective_flip::{Module, Call, Storage},
 
         // PoS consensus support.
         Session: session::{Module, Call, Storage, Event, Config<T>},
@@ -369,7 +395,7 @@ impl system::offchain::CreateTransaction<Runtime, UncheckedExtrinsic> for Runtim
             system::CheckEra::<Runtime>::from(generic::Era::mortal(period, current_block)),
             system::CheckNonce::<Runtime>::from(index),
             system::CheckWeight::<Runtime>::new(),
-            balances::TakeFees::<Runtime>::from(tip),
+            transaction_payment::ChargeTransactionPayment::<Runtime>::from(tip),
         );
         let raw_payload = SignedPayload::new(call, extra).ok()?;
         let signature = F::sign(account.clone(), &raw_payload)?;
@@ -401,7 +427,7 @@ pub type SignedExtra = (
     system::CheckEra<Runtime>,
     system::CheckNonce<Runtime>,
     system::CheckWeight<Runtime>,
-    balances::TakeFees<Runtime>
+    transaction_payment::ChargeTransactionPayment<Runtime>,
 );
 
 /// Unchecked extrinsic type as expected by this runtime.
@@ -456,7 +482,7 @@ impl_runtime_apis! {
         }
 
         fn random_seed() -> <Block as BlockT>::Hash {
-            System::random_seed()
+            RandomnessCollectiveFlip::random_seed()
         }
     }
 
@@ -473,45 +499,25 @@ impl_runtime_apis! {
     }
 
     impl fg_primitives::GrandpaApi<Block> for Runtime {
-        fn grandpa_pending_change(digest: &DigestFor<Block>)
-            -> Option<ScheduledChange<NumberFor<Block>>>
-        {
-            Grandpa::pending_change(digest)
-        }
-
-        fn grandpa_forced_change(digest: &DigestFor<Block>)
-            -> Option<(NumberFor<Block>, ScheduledChange<NumberFor<Block>>)>
-        {
-            Grandpa::forced_change(digest)
-        }
-
         fn grandpa_authorities() -> Vec<(GrandpaId, GrandpaWeight)> {
             Grandpa::grandpa_authorities()
         }
     }
 
     impl babe_primitives::BabeApi<Block> for Runtime {
-        fn startup_data() -> babe_primitives::BabeConfiguration {
+        fn configuration() -> babe_primitives::BabeConfiguration {
             // The choice of `c` parameter (where `1 - c` represents the
             // probability of a slot being empty), is done in accordance to the
-            // slot duration and expected target block time,
-            // for safely resisting network delays of maximum two seconds.
+            // slot duration and expected target block time, for safely
+            // resisting network delays of maximum two seconds.
             // <https://research.web3.foundation/en/latest/polkadot/BABE/Babe/#6-practical-results>
             babe_primitives::BabeConfiguration {
-                median_required_blocks: 1000,
                 slot_duration: Babe::slot_duration(),
-                c: (278, 1000),
-            }
-        }
-
-        fn epoch() -> babe_primitives::Epoch {
-            babe_primitives::Epoch {
-                start_slot: Babe::epoch_start_slot(),
-                authorities: Babe::authorities(),
-                epoch_index: Babe::epoch_index(),
+                epoch_length: EpochDuration::get(),
+                c: PRIMARY_PROBABILITY,
+                genesis_authorities: Babe::authorities(),
                 randomness: Babe::randomness(),
-                duration: EpochDuration::get(),
-                secondary_slots: Babe::secondary_slots().0,
+                secondary_slots: true,
             }
         }
     }
@@ -531,12 +537,12 @@ impl_runtime_apis! {
         }
 
         fn verify(payload: &Vec<u8>, signature: &EncodedSignature, authority_id: &EncodedAuthorityId) -> bool {
-            let signature = match ImOnlineSignature::decode(&mut &signature.0[..]) {
+            let signature = match BabeSignature::decode(&mut &signature.0[..]) {
                 Ok(s) => s,
                 _ => return false,
             };
 
-            let authority_id = match ImOnlineId::decode(&mut &authority_id.0[..]) {
+            let authority_id = match BabeId::decode(&mut &authority_id.0[..]) {
                 Ok(id) => id,
                 _ => return false,
             };

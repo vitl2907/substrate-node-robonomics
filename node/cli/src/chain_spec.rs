@@ -234,8 +234,8 @@ pub fn robonomics_testnet_config() -> ChainSpec {
         boot_nodes,
         Some(TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(), 0)])),
         None,
-        None,
-        Some(xrt_props())
+        Some(xrt_props()),
+        Default::default(),
     )
 }
 */
@@ -258,8 +258,8 @@ pub fn development_config() -> ChainSpec {
         vec![],
         None,
         None,
-        None,
-        Some(xrt_props())
+        Some(xrt_props()),
+        Default::default(),
     )
 }
 
@@ -282,7 +282,7 @@ pub fn local_testnet_config() -> ChainSpec {
         vec![],
         None,
         None,
-        None,
-        Some(xrt_props())
+        Some(xrt_props()),
+        Default::default(),
     )
 }

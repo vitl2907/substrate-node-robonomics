@@ -35,10 +35,14 @@ staking = { package = "srml-staking", git = "https://github.com/paritytech/subst
 sudo = { package = "srml-sudo", git = "https://github.com/paritytech/substrate", default-features = false }
 im-online = { package = "srml-im-online", git = "https://github.com/paritytech/substrate", default-features = false }
 offences = { package = "srml-offences", git = "https://github.com/paritytech/substrate", default-features = false }
+utility = { package = "srml-utility", git = "https://github.com/paritytech/substrate", default-features = false }
+randomness-collective-flip = { package = "srml-randomness-collective-flip", git = "https://github.com/paritytech/substrate", default-features = false }
 srml-staking-reward-curve = { git = "https://github.com/paritytech/substrate" }
+transaction-payment = { package = "srml-transaction-payment", git = "https://github.com/paritytech/substrate", default-features = false }
+
 
 [build-dependencies]
-wasm-builder-runner = { package = "substrate-wasm-builder-runner", version = "1.0.2" }
+wasm-builder-runner = { package = "substrate-wasm-builder-runner", version = "1.0.2", git = "https://github.com/paritytech/substrate" }
 
 [features]
 default = ["std"]
@@ -69,8 +73,11 @@ std = [
     "sudo/std",
     "im-online/std",
     "offences/std",
+    "utility/std",
+    "randomness-collective-flip/std",
     "authority-discovery-primitives/std",
     "authority-discovery/std",
     "substrate-session/std",
+    "transaction-payment/std",
 ]
 no_std = []
