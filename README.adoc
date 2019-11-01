@@ -12,7 +12,7 @@ image:https://img.shields.io/github/release/airalab/substrate-node-robonomics.sv
 
 AIRA (Autonomous Intelligent Robot Agent) project implements the standard of economic interaction between human-robot and robot-robot via liability smart contract. AIRA makes it possible to connect a variety of different robots to the market of robot liabilities for the direct sale of data from robot sensors, ordering of logistics services, and organization ordering of personalized products at fully automated enterprises.
 
-This source is a part of AIRA project. It implements their purposes using Substrate technologies.
+This source is a part of AIRA project. It achieves project's goals using Substrate technologies.
 
 == Try it out
 
@@ -22,7 +22,7 @@ This source is a part of AIRA project. It implements their purposes using Substr
  . Save and reload
  . Get test tokens at https://faucets.blockxlabs.com
 
-When connection is success you can explore `Robonomics testnet` using Substrate UI.
+When connection is successful you can explore `Robonomics testnet` using Substrate UI.
 
  - Accounts management: https://polkadot.js.org/apps/#/accounts
  - Looking for network events: https://polkadot.js.org/apps/#/explorer
@@ -31,7 +31,7 @@ When connection is success you can explore `Robonomics testnet` using Substrate 
 
 == Install node
 
-Robonomics on Substrate binary blobs available as an assets in https://github.com/airalab/substrate-node-robonomics/releases[releases]. Latest version you can try to build from source code.
+Robonomics on Substrate binary blobs are available as assets in https://github.com/airalab/substrate-node-robonomics/releases[releases]. You can try to build the latest version from the source code.
 
 === Building from source
 
@@ -117,11 +117,11 @@ Currently Robonomics on Substrate https://telemetry.polkadot.io/#/Robonomics[tes
 
 === Full node
 
-You can support the network just by launch the node. Every additional full node of blockchain helps it to be more sustainable and fault tolerant. Robonomics node binaries is available on https://github.com/airalab/substrate-node-robonomics/releases[releases] or could be <<building-from-source,build from source>>.
+You can support the network just by launching the node. Every additional full node of the blockchain helps it to be more sustainable and fault tolerant. Robonomics node binaries are available on https://github.com/airalab/substrate-node-robonomics/releases[releases] or could be <<building-from-source,build from source>>.
 
 === Become a validator
 
-For nodes that can be online 24/7 also available most important role on chain - block producers or briefly validator. Robonomics on Substrate use https://github.com/paritytech/substrate/blob/8930f297737db67257f3be1a8b286f8c50189066/srml/staking/Staking.md[NPoS algorithm] for choosing block production accounts. For this reason if you have any stake in testnet XRT then you can try self in block production. 
+For nodes that can be online 24/7 the most important role on chain is also available - block producers or simply validators. Robonomics on Substrate use https://github.com/paritytech/substrate/blob/8930f297737db67257f3be1a8b286f8c50189066/srml/staking/Staking.md[NPoS algorithm] for choosing block production accounts. For this reason if you have any stake in testnet XRT then you can try yourself in block production. 
 
  . Launch node and wait for synchronization.
 [source, shell]
@@ -152,7 +152,7 @@ robonomics --validator
 
 == Robotics integration
 
-Special feature `ros` helps to use Robonomics Substrate modules in http://www.ros.org[ROS]-enabled cyber-physical systems.
+Special `ros` feature helps to use Robonomics Substrate modules in http://www.ros.org[ROS]-enabled cyber-physical systems.
 
 === Building with ROS feature
 
